@@ -40,12 +40,12 @@ def load_data(file_path):
 
 def extract_labels(data, output_path):
     """Estrae, codifica, mappa e salva le etichette di dominio"""
-    print(f"\nProcessing and saving labels to {output_path}...")
+    print(f"\nProcessing and saving labels at {output_path}...")
     label_encoder = LabelEncoder()
     y_encoded = label_encoder.fit_transform(data["domain"])
     pd.DataFrame(y_encoded).to_csv(output_path, header=False, index=False)
     class_map = {i: name for i, name in enumerate(label_encoder.classes_)}
-    class_map_filename = "label_map.json"
+    class_map_filename = "embedding/label_map.json"
     with open(class_map_filename, "w") as f:
         json.dump(class_map, f, indent=4)
 
@@ -109,14 +109,16 @@ def main():
     print(f"Using device: {device}")
 
     # Caricamento dei dati
-    input_path = args.noisy_input_path if args.noisy_headers else args.input_path
     if args.noisy_headers:
-        input_path = args.noisy_input_path
+        dataset_path = args.noisy_input_path
+        print("\nUsing noisy scenario")
     elif args.ideal_scenario:
-        input_path = args.ideal_input_path
+        dataset_path = args.ideal_input_path
+        print("\nUsing ideal scenario")
     else:
-        input_path = args.input_path
-    data = load_data(input_path)
+        dataset_path = args.input_path
+        print("\nUsing baseline scenario")
+    data = load_data(dataset_path)
     extract_labels(data, args.labels_path)
 
     headers = data.iloc[:, 1]
@@ -134,7 +136,7 @@ def main():
     # Combinazione delle feature statistiche
     if args.stats_features:
         print("\nStats features enabled")
-        # Calcolo feature statistiche
+        # Calcolo feature statistiche a partire dai dati originali
         z_score, percentile = calculate_stats_features(
             load_data(args.input_path), values
         )
@@ -145,7 +147,7 @@ def main():
         )
     else:
         # Text embedding
-        # Se la flag 'headers_only' è attivata utilizzo solo 'header_embeddings'
+        # Se la flag 'headers_only' è attivata, utilizzo solo 'header_embeddings'
         # Altrimenti, faccio la media tra 'header_embeddings e 'value_embeddings'
         values_weight = 0.0 if args.headers_only else 0.5
         headers_weight = 1.0 if args.headers_only else 0.5
@@ -167,19 +169,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--input_path",
         type=str,
-        default="Dataset_Baseline.csv",
+        default="Dataset/Dataset_Baseline.csv",
         help="Path to the input Dataset file",
     )
     parser.add_argument(
         "--noisy_input_path",
         type=str,
-        default="Dataset_Noise.csv",
+        default="Dataset/Dataset_Noise.csv",
         help="Path to the noisy Dataset file",
     )
     parser.add_argument(
         "--ideal_input_path",
         type=str,
-        default="Dataset_Ideal.csv",
+        default="Dataset/Dataset_Ideal.csv",
         help="Path to the ideal Dataset file",
     )
     parser.add_argument(
@@ -187,12 +189,15 @@ if __name__ == "__main__":
     )
     # File di output
     parser.add_argument(
-        "--labels_path", type=str, default="labels.txt", help="Encoded GT labels path"
+        "--labels_path",
+        type=str,
+        default="embedding/labels.txt",
+        help="Encoded GT labels path",
     )
     parser.add_argument(
         "--embeddings_path",
         type=str,
-        default="embeddings.txt",
+        default="embedding/embeddings.txt",
         help="Final embeddings path",
     )
     # Flag per l'embedding

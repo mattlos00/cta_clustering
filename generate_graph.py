@@ -109,8 +109,9 @@ def main(args):
     similarity_matrix = calculate_similarity(features, method=args.method)
 
     # Generazione e salvataggio del grafo
-    name = args.features_path.split(".")[0]
-    output_path = "graph/{}{}_graph.txt".format(name, args.k)
+    file_path = args.features_path.split("/")[1]
+    file_name = file_path.split(".")[0]
+    output_path = "graph/{}{}_graph.txt".format(file_name, args.k)
     error_rate = construct_and_save_graph(
         similarity_matrix, k=args.k, labels=labels, output_path=output_path
     )
@@ -130,13 +131,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--features_path",
         type=str,
-        default="embeddings.txt",
+        default="embedding/embeddings.txt",
         help="Path to the input features file",
     )
     parser.add_argument(
         "--labels_path",
         type=str,
-        default="labels.txt",
+        default="embedding/labels.txt",
         help="Path to the input labels file",
     )
 

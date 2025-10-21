@@ -1,61 +1,19 @@
 import argparse
 import random
-from time import time
 
-import h5py
 import numpy as np
-import pandas as pd
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.cluster import Birch, KMeans
-from sklearn.metrics import (calinski_harabasz_score, davies_bouldin_score,
-                             silhouette_score)
-from torch.nn import Linear
-from torch.nn.parameter import Parameter
-from torch.optim import SGD, Adam
-from torch.utils.data import DataLoader, Dataset
+from sklearn.metrics import silhouette_score
+from torch.optim import Adam
+from torch.utils.data import DataLoader
 
-from evaluation import eva
+from autoencoder.autoencoder import AE, LoadDataset
+from utils.evaluation import eva
 
 g = torch.Generator()
 g.manual_seed(222)
-
-
-class AE(nn.Module):
-    """Autoencoder"""
-
-    def __init__(self, n_enc_1, n_dec_1, n_input, n_z):
-        super(AE, self).__init__()
-        self.enc_1 = Linear(n_input, n_enc_1)
-        self.z_layer = Linear(n_enc_1, n_z)
-
-        self.dec_1 = Linear(n_z, n_dec_1)
-        self.x_bar_layer = Linear(n_dec_1, n_input)
-
-    def forward(self, x):
-        enc_h1 = F.relu(self.enc_1(x))
-        z = self.z_layer(enc_h1)
-
-        dec_h1 = F.relu(self.dec_1(z))
-        x_bar = self.x_bar_layer(dec_h1)
-
-        return x_bar, z
-
-
-class LoadDataset(Dataset):
-    """Caricamento del dataset per il training"""
-
-    def __init__(self, data):
-        self.x = data
-
-    def __len__(self):
-        return self.x.shape[0]
-
-    def __getitem__(self, idx):
-        return torch.from_numpy(np.array(self.x[idx])).float(), torch.from_numpy(
-            np.array(idx)
-        )
 
 
 def seed_worker():
@@ -175,7 +133,7 @@ def run_pretraining(args):
         )
 
         print(
-            f"Epoch {epoch}: Loss={loss:.4f}, ARI={ari:.4f}, ACC={acc:.4f}, Sil={sil:.4f}"
+            f"Epoch {epoch}: Loss={loss:.4f}, ARI={ari:.4f}, ACC={acc:.4f}, Sil={sil:.4f}, Best Ari: {best_ari:.4f}"
         )
 
         # Salvataggio e early stopping
@@ -213,12 +171,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Autoencoder Pre-training")
 
     # File input/output
-    parser.add_argument("--features_path", type=str, default="embeddings.txt")
-    parser.add_argument("--labels_path", type=str, default="labels.txt")
-    parser.add_argument("--output_model_path", type=str, default="ae.pkl")
-    parser.add_argument("--sdcn_model_path", type=str, default="ae_sdcn.pkl")
+    parser.add_argument("--features_path", type=str, default="embedding/embeddings.txt")
+    parser.add_argument("--labels_path", type=str, default="embedding/labels.txt")
+    parser.add_argument("--output_model_path", type=str, default="autoencoder/ae.pkl")
     parser.add_argument(
-        "--labels_out_path", type=str, default="predicted_labels_ae.txt"
+        "--sdcn_model_path", type=str, default="autoencoder/ae_sdcn.pkl"
+    )
+    parser.add_argument(
+        "--labels_out_path", type=str, default="predictions/predicted_labels_ae.txt"
     )
 
     # Architettura AE
@@ -228,7 +188,7 @@ if __name__ == "__main__":
     # Iperparametri
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch_size", type=int, default=256)
-    parser.add_argument("--max_epochs", type=int, default=120)
+    parser.add_argument("--max_epochs", type=int, default=130)
     parser.add_argument(
         "--sdcn_epoch", type=int, default=29, help="Epoch for AE pre-train for SDCN"
     )

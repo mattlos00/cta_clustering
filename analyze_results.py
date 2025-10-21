@@ -5,7 +5,6 @@ from collections import Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import seaborn as sns
 from sklearn.manifold import TSNE
 from sklearn.metrics import confusion_matrix
@@ -122,10 +121,14 @@ def inspect_cluster(cluster_id, y_true, y_pred, class_names):
 
 def main(args):
     """Analisi dei risultati di clustering"""
+    if "/" in args.pred_labels_file:
+        predictions_file = args.pred_labels_file
+    else:
+        predictions_file = "predictions/" + args.pred_labels_file
     X, y_true, y_pred, class_names = load_data(
         args.embeddings_file,
         args.true_labels_file,
-        args.pred_labels_file,
+        predictions_file,
         args.class_map_file,
     )
 
@@ -154,10 +157,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze and view clustering results")
 
     # Input
-    parser.add_argument("--embeddings_file", type=str, default="embeddings.txt")
-    parser.add_argument("--true_labels_file", type=str, default="labels.txt")
+    parser.add_argument(
+        "--embeddings_file", type=str, default="embedding/embeddings.txt"
+    )
+    parser.add_argument("--true_labels_file", type=str, default="embedding/labels.txt")
     parser.add_argument("--pred_labels_file", type=str)  # Obbligatorio
-    parser.add_argument("--class_map_file", type=str, default="label_map.json")
+    parser.add_argument(
+        "--class_map_file", type=str, default="embedding/label_map.json"
+    )
 
     # Opzionali
     parser.add_argument(
