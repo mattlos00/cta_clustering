@@ -41,6 +41,7 @@ Thumbs.db
 !predictons/*.txt
 !THIRD_PARTY_LICENSES/*.txt
 !graph/*.txt
+!models/*.txt
 
 *.json
 
@@ -49,6 +50,7 @@ Thumbs.db
 *.pkl
 
 !autoencoder/*.pkl
+!models/*.pkl
 
 *.yml
 
