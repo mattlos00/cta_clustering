@@ -40,9 +40,11 @@ def load_data(file_path):
 
 def extract_labels(data, output_path):
     """Estrae, codifica, mappa e salva le etichette di dominio"""
+    labels = data["domain"]
+   # print(f"\nDistribuzione dei domini: {labels.value_counts()}")
     print(f"\nProcessing and saving labels at {output_path}...")
     label_encoder = LabelEncoder()
-    y_encoded = label_encoder.fit_transform(data["domain"])
+    y_encoded = label_encoder.fit_transform(labels)
     pd.DataFrame(y_encoded).to_csv(output_path, header=False, index=False)
     class_map = {i: name for i, name in enumerate(label_encoder.classes_)}
     class_map_filename = "embedding/label_map.json"

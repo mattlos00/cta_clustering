@@ -57,3 +57,8 @@ Thumbs.db
 *.csv
 
 !Dataset/*.csv
+
+*.png
+*.jpg
+
+/results/

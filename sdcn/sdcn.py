@@ -51,3 +51,16 @@ class SDCN(nn.Module):
         q = (q.t() / torch.sum(q, 1)).t()
 
         return x_bar, q, predict, z
+
+
+    @torch.no_grad()
+    def get_gnn_logits(self, data, adj):
+        _, tra1, z = self.ae(data) 
+
+        sigma = 0.5
+
+        h = self.gnn_1(data, adj)
+        h = self.gnn_2((1 - sigma) * h + sigma * tra1, adj)
+        logits = self.gnn_3((1 - sigma) * h + sigma * z, adj, active=False) # active=False for logits
+        return logits
+    

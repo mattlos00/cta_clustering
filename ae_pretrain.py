@@ -83,9 +83,9 @@ def evaluate_and_cluster(
         sil = silhouette_score(z_cpu, pred_labels)
     else:
         sil = 0.0
-    ari, acc, _, n_clusters, sil = eva(true_labels, pred_labels, sil, epoch)
+    ari, acc, pred_labels_mapped, n_clusters, sil = eva(true_labels, pred_labels, sil, epoch)
 
-    return reconstruction_loss.item(), ari, acc, n_clusters, sil, pred_labels
+    return reconstruction_loss.item(), ari, acc, n_clusters, sil, pred_labels_mapped, z_cpu
 
 
 def run_pretraining(args):
@@ -128,18 +128,17 @@ def run_pretraining(args):
 
         _ = train_one_epoch(model, train_loader, optimizer, device)
 
-        loss, ari, acc, n_clusters, sil, pred_labels = evaluate_and_cluster(
+        loss, ari, acc, n_clusters, sil, pred_labels, z = evaluate_and_cluster(
             model, x, y, device, args.n_clusters, args.clus_method, epoch
         )
 
         print(
-            f"Epoch {epoch}: Loss={loss:.4f}, ARI={ari:.4f}, ACC={acc:.4f}, Sil={sil:.4f}, Best Ari: {best_ari:.4f}"
+            f"Epoch {epoch}: Loss={loss:.4f}, ACC={acc:.4f}, ARI={ari:.4f}, Sil={sil:.4f}, Best Ari: {best_ari:.4f}"
         )
 
-        # Salvataggio e early stopping
+        # Salvataggio modello 
         if loss < best_loss:
             best_loss = loss
-            print("Loss improved. Saving model.")
             torch.save(model.state_dict(), args.output_model_path)
 
         # Salva i migliori risultati di clustering
@@ -151,9 +150,10 @@ def run_pretraining(args):
             best_sil = sil
             best_ari_epoch = epoch
             np.savetxt(args.labels_out_path, pred_labels, fmt="%d")
+            np.savetxt(args.latent_out_path, z, fmt="%.8f")
 
         # Salvataggio del modello per SDCN
-        if epoch == 29:
+        if epoch == (args.pretrain_epochs - 1):
             print(f"Saving pre-trained AE.")
             torch.save(model.state_dict(), args.sdcn_model_path)
 
@@ -180,6 +180,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--labels_out_path", type=str, default="predictions/predicted_labels_ae.txt"
     )
+    parser.add_argument(
+        "--latent_out_path", type=str, default="models/z_ae_birch.txt"
+    )    
+
+    # Epoche di pre-addestramento
+    parser.add_argument("--pretrain_epochs", type=int, default=30)
 
     # Architettura AE
     parser.add_argument("--hidden_dim", type=int, default=1000)

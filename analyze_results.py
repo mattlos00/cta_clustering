@@ -32,7 +32,6 @@ def load_data(embeddings_path, true_labels_path, pred_labels_path, class_map_pat
         print(f"Error during data loading: {e}")
         exit()
 
-
 def plot_confusion_matrix(y_true, y_pred, class_names, output_dir=None):
     """Genera e mostra/salva la matrice di confusione"""
     cm = confusion_matrix(y_true, y_pred)
@@ -50,7 +49,7 @@ def plot_confusion_matrix(y_true, y_pred, class_names, output_dir=None):
     plt.xlabel("Predicted Label")
 
     if output_dir:
-        output_path = os.path.join(output_dir, "confusion_matrix.png")
+        output_path = os.path.join(output_dir, "matrix.png")
         plt.savefig(output_path, bbox_inches="tight")
         print(f"Plot saved at: {output_path}")
     else:
@@ -91,7 +90,7 @@ def plot_tsne_visualization(X, y_true, y_pred, class_names, output_dir=None):
     )
 
     if output_dir:
-        output_path = os.path.join(output_dir, "tsne_visualization.png")
+        output_path = os.path.join(output_dir, "tsne.png")
         plt.savefig(output_path, bbox_inches="tight")
         print(f"t-SNE saved at: {output_path}")
     else:
@@ -171,7 +170,7 @@ if __name__ == "__main__":
         "--output_dir", type=str, default=None, help="Plots output directory"
     )
     parser.add_argument(
-        "--no_tsne", action="store_false", dest="run_tsne", help="Skip t-SNE"
+        "--tsne", action="store_false", dest="run_tsne", help="Run t-SNE"
     )
 
     # Ispezione dei cluster

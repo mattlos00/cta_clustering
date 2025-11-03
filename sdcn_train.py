@@ -95,13 +95,14 @@ def run_training(args, device):
     for epoch in range(args.max_epochs):
         # Calcolo distribuzione target
         # Solo DOPO la prima epoca
-        # Per non partire da uno spazio latente non ancora ottimale
+        # Per il warm-up dell'ottimizzatore
+        # Prima epoca: solo loss di ricostruzione
         if epoch > 0:
             with torch.no_grad():
                 _, tmp_q, _, _ = model(data, adj)
                 p = target_distribution(tmp_q)
 
-        # Forward e backward pass
+        # Forward pass
         x_bar, q, pred, _ = model(data, adj)
 
         re_loss = F.mse_loss(x_bar, data)
@@ -117,6 +118,7 @@ def run_training(args, device):
         else:  # Prima epoca
             loss = re_loss
 
+        # Backward pass
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -139,6 +141,7 @@ def run_training(args, device):
             best_sil = sil
             best_labels = pred_labels
             no_improve_count = 0
+            torch.save(model.state_dict(), args.save_model_path)
         else:
             no_improve_count += 1
 
@@ -151,6 +154,23 @@ def run_training(args, device):
     if best_labels is not None:
         np.savetxt(args.output_path, best_labels, fmt="%d")
 
+    best_model = SDCN(
+        n_enc_1=args.hidden_dim,
+        n_dec_1=args.hidden_dim,
+        n_input=args.n_input,
+        n_z=args.n_z,
+        n_clusters=args.n_clusters,
+        weights_path=args.pretrain_path,
+    ).to(device)
+
+    best_model.load_state_dict(torch.load(args.save_model_path))
+    best_model.eval()
+
+    model_logits = best_model.get_gnn_logits(data, adj)
+
+    save_logits = model_logits.cpu().numpy()
+    np.savetxt(args.save_logits_path, save_logits, fmt="%.8f")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SDCN Training")
@@ -160,6 +180,12 @@ if __name__ == "__main__":
     parser.add_argument("--pretrain_path", type=str, default="autoencoder/ae_sdcn.pkl")
     parser.add_argument(
         "--output_path", type=str, default="predictions/predicted_labels_sdcn.txt"
+    )
+    parser.add_argument(
+        "--save_model_path", type=str, default="models/sdcn_best_model.pkl"
+    )
+    parser.add_argument(
+        "--save_logits_path", type=str, default="models/sdcn_best_logits.txt"
     )
     # Architettura SDCN
     parser.add_argument("--n_input", type=int, default=768)
